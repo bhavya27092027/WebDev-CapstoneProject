@@ -56,7 +56,6 @@ const Footer = () => {
           <p className="text-gray-400 text-sm font-['Lato']">
             © 2025 CabPortal. All rights reserved.
           </p>
-
         </div>
       </div>
     </footer>

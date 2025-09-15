@@ -7,9 +7,9 @@ const Header = ({ userRole, onLogout, currentUser }) => {
 
   const navigation = userRole === 'company'
     ? [
-      { name: 'Dashboard', href: '#dashboard' },
-      { name: 'Book Cab', href: '#book' },
-      { name: 'My Bookings', href: '#bookings' }
+      { name: 'Dashboard', href: '#Dashboard' },
+      { name: 'Book Cab', href: '#BookCab' },
+      { name: 'My Bookings', href: '#MyBookings' }
     ]
     : [
       { name: 'Dashboard', href: '#dashboard' },
