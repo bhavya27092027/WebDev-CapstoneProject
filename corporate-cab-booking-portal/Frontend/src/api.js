@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || "http://localhost:5173/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:5174/api";
 
 export async function request(url, method = "GET", body = null, auth = false) {
   const headers = { "Content-Type": "application/json" };
@@ -15,4 +15,5 @@ export async function request(url, method = "GET", body = null, auth = false) {
   if (!res.ok) throw new Error(data.message || "API error");
   return data;
 }
+
 
