@@ -36,7 +36,7 @@ export default function App() {
               element={user ? <Home /> : <Navigate to="/login" />}
             />
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
 
           </Routes>
 

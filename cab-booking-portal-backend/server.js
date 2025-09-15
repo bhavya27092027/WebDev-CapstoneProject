@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-  origin:  [ "http://localhost:5174"],  
+  origin:  [ "http://localhost:5173"],  
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
@@ -53,6 +53,6 @@ app.get("/", (req, res) => res.send("Backend running"));
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5173;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

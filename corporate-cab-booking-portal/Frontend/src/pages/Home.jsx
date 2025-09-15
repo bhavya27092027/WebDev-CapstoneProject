@@ -11,11 +11,13 @@ const Home = () => {
   const token = user?.token;
   const userRole = user?.role;
 
+  const API_URL = "http://localhost:5000/api/bookings"; 
+
   // Fetch bookings from backend
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5173/api/bookings', {
+      const res = await fetch(API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -35,12 +37,13 @@ const Home = () => {
 
   useEffect(() => {
     fetchBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle new booking submission
   const handleBookingSubmit = async (bookingData) => {
     try {
-      const res = await fetch('http://localhost:5173/api/bookings', {
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,17 +68,14 @@ const Home = () => {
   // Handle status change (for vendor)
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
-      const res = await fetch(
-        `http://localhost:5173/api/bookings/${bookingId}/status`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      const res = await fetch(`${API_URL}/${bookingId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
       const data = await res.json();
 
       if (res.ok) {
@@ -96,7 +96,7 @@ const Home = () => {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       {/* Dashboard Section */}
       <section id="Dashboard">
-        {/* Existing content can go here if needed */}
+        {/* Optional content */}
       </section>
 
       {/* Booking Form Section (only for company) */}
@@ -134,7 +134,3 @@ const Home = () => {
 };
 
 export default Home;
-
-
-
-
