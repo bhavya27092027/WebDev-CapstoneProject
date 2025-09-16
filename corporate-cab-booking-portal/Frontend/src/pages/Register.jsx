@@ -27,6 +27,9 @@ const Register = ({ onRegisterSuccess }) => {
     setValue,
   } = useForm({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      role: "", // ✅ for zod to validate empty role
+    },
   });
 
   const handleRoleSelect = (role) => {
@@ -39,21 +42,22 @@ const Register = ({ onRegisterSuccess }) => {
     try {
       const result = await request("/api/auth/register", "POST", data);
 
-      // Save user info in localStorage
+      // ✅ Save user info in localStorage
       localStorage.setItem(
         "user",
         JSON.stringify({
           token: result.token,
-          email: result.user.email,
-          role: result.user.role,
-          name: result.user.name,
+          email: result.email,
+          role: result.role,
+          name: result.name,
         })
       );
+
       localStorage.setItem("token", result.token);
 
       toast.success("Registration successful!");
-      onRegisterSuccess?.(result.user);
-      window.location.href = "/home"; // ✅ go to home
+      onRegisterSuccess?.(result);
+      window.location.href = "/home";
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Registration failed");

@@ -30,7 +30,7 @@ const BookingForm = ({ onBookingCreated }) => {
   const handleFormSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:5173/api/bookings', {
+      const res = await fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,13 +65,13 @@ const BookingForm = ({ onBookingCreated }) => {
     <motion.div className="bg-white rounded-lg shadow-sm border p-6">
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input {...register('guestName')} placeholder="Guest Name" className="border p-2 rounded" />
-          <input {...register('guestPhone')} placeholder="Phone Number" className="border p-2 rounded" />
-          <input {...register('pickupLocation')} placeholder="Pickup Location" className="border p-2 rounded" />
-          <input {...register('dropoffLocation')} placeholder="Drop-off Location" className="border p-2 rounded" />
-          <input {...register('date')} type="date" min={new Date().toISOString().split('T')[0]} className="border p-2 rounded" />
-          <input {...register('time')} type="time" className="border p-2 rounded" />
-          <select {...register('carCategory')} className="border p-2 rounded">
+          <input {...register('guestName')} placeholder="Guest Name" required className="border p-2 rounded" />
+          <input {...register('guestPhone')} placeholder="Phone Number" required className="border p-2 rounded" />
+          <input {...register('pickupLocation')} placeholder="Pickup Location" required className="border p-2 rounded" />
+          <input {...register('dropoffLocation')} placeholder="Drop-off Location" required className="border p-2 rounded" />
+          <input {...register('date')} type="date" min={new Date().toISOString().split('T')[0]} required className="border p-2 rounded" />
+          <input {...register('time')} type="time" required className="border p-2 rounded" />
+          <select {...register('carCategory')} required className="border p-2 rounded">
             <option value="">Select Car Category</option>
             {carCategories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
@@ -87,3 +87,4 @@ const BookingForm = ({ onBookingCreated }) => {
 };
 
 export default BookingForm;
+

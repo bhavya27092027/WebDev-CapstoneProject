@@ -18,7 +18,7 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       toast.success("Login successful!");
-      window.location.href = "/home"; // ✅ go to /home instead of /dashboard
+      window.location.href = "/home";
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Login failed");
