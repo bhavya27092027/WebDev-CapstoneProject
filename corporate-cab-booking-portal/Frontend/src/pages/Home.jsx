@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 const Home = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [vendors, setVendors] = useState([]);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token;
@@ -22,14 +21,8 @@ const Home = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-
-      console.log("Bookings from API:", data); // 🔎 Debugging
-
-      if (res.ok) {
-        setBookings(data); // ✅ Use backend field names directly
-      } else {
-        toast.error(data.message || "Failed to fetch bookings");
-      }
+      if (res.ok || res.status === 200) setBookings(data);
+      else toast.error(data.message || "Failed to fetch bookings");
     } catch {
       toast.error("Server error while fetching bookings");
     } finally {
@@ -37,53 +30,7 @@ const Home = () => {
     }
   };
 
-  // Fetch vendors (only company)
-  const fetchVendors = async () => {
-    if (userRole !== "company") return;
-    try {
-      const res = await fetch("http://localhost:5000/api/users/vendors", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) setVendors(data);
-    } catch {
-      toast.error("Failed to fetch vendors");
-    }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-    fetchVendors();
-  }, []);
-
-  // Assign vendor (company)
-  const assignVendor = async (bookingId, vendorId) => {
-    try {
-      const res = await fetch(`${API_URL}/assign-vendor/${bookingId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ vendorId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Vendor assigned!");
-        setBookings((prev) =>
-          prev.map((b) =>
-            b._id === bookingId ? { ...b, vendorId: data.vendorId } : b
-          )
-        );
-      } else {
-        toast.error(data.message || "Failed to assign vendor");
-      }
-    } catch {
-      toast.error("Server error while assigning vendor");
-    }
-  };
-
-  // Vendor self-assign
+  // Vendor assign booking
   const handleAssignBooking = async (bookingId) => {
     try {
       const res = await fetch(`${API_URL}/${bookingId}/assign`, {
@@ -91,22 +38,16 @@ const Home = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok || res.status === 200) {
         toast.success("Booking assigned to you!");
-        setBookings((prev) =>
-          prev.map((b) =>
-            b._id === bookingId ? { ...b, status: "assigned", vendorId: user } : b
-          )
-        );
-      } else {
-        toast.error(data.message || "Failed to assign booking");
-      }
+        fetchBookings();
+      } else toast.error(data.message || "Failed to assign booking");
     } catch {
       toast.error("Server error while assigning booking");
     }
   };
 
-  // Update status
+  // Vendor update status
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
       const res = await fetch(`${API_URL}/${bookingId}/status`, {
@@ -118,16 +59,10 @@ const Home = () => {
         body: JSON.stringify({ status: newStatus }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setBookings((prev) =>
-          prev.map((b) =>
-            b._id === bookingId ? { ...b, status: newStatus } : b
-          )
-        );
-        toast.success("Booking status updated!");
-      } else {
-        toast.error(data.message || "Failed to update status");
-      }
+      if (res.ok || res.status === 200) {
+        toast.success("Status updated!");
+        fetchBookings();
+      } else toast.error(data.message || "Failed to update status");
     } catch {
       toast.error("Server error while updating status");
     }
@@ -142,7 +77,7 @@ const Home = () => {
       });
       if (res.ok) {
         toast.success("Booking deleted!");
-        setBookings((prev) => prev.filter((b) => b._id !== bookingId));
+        fetchBookings();
       } else {
         const data = await res.json();
         toast.error(data.message || "Failed to delete booking");
@@ -152,14 +87,16 @@ const Home = () => {
     }
   };
 
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
-      {userRole === "company" && (
-        <BookingForm onBookingCreated={fetchBookings} />
-      )}
+      {userRole === "company" && <BookingForm onBookingCreated={fetchBookings} />}
 
       <section>
-        <h2 className="text-xl font-bold font-['Poppins']">
+        <h2 className="text-xl font-bold">
           {userRole === "vendor" ? "Available Bookings" : "Your Bookings"}
         </h2>
 
@@ -196,31 +133,7 @@ const Home = () => {
 
                   {/* Vendor assigned badge */}
                   {userRole === "vendor" && isAssignedToVendor && (
-                    <p className="mt-2 text-green-600 font-semibold">
-                      Assigned to you
-                    </p>
-                  )}
-
-                  {/* Company assign dropdown */}
-                  {userRole === "company" && booking.status === "pending" && (
-                    <div className="mt-2">
-                      <select
-                        onChange={(e) =>
-                          assignVendor(booking._id, e.target.value)
-                        }
-                        defaultValue=""
-                        className="p-2 border rounded"
-                      >
-                        <option value="" disabled>
-                          Select vendor
-                        </option>
-                        {vendors.map((v) => (
-                          <option key={v._id} value={v._id}>
-                            {v.name} ({v.email})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <p className="mt-2 text-green-600 font-semibold">Assigned to you</p>
                   )}
                 </div>
               );

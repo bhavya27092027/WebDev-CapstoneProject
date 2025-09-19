@@ -15,14 +15,14 @@ const bookingSchema = new mongoose.Schema(
     pickupLocation: { type: String, required: true },
     dropLocation: { type: String, required: true },
     carCategory: { type: String, required: true },
-    date: { type: String, required: true },  
+    date: { type: String, required: true },
     time: { type: String, required: true },
-    referenceName: { type: String },  
-    specialInstructions: { type: String },  
+    referenceName: { type: String },
+    specialInstructions: { type: String },
 
     status: {
       type: String,
-      enum: ["pending", "assigned", "completed", "cancelled"],
+      enum: ["pending", "assigned", "completed", "rejected"],
       default: "pending",
     },
   },
@@ -31,4 +31,3 @@ const bookingSchema = new mongoose.Schema(
 
 const Booking = mongoose.model("Booking", bookingSchema);
 export default Booking;
-

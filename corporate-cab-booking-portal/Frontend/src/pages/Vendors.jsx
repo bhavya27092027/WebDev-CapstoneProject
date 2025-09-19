@@ -1,110 +1,129 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import VendorForm from "../components/VendorForm";
-import VendorCard from "../components/VendorCard";
+import BookingCard from "../components/BookingCard";
 
-const API_URL = "http://localhost:5000/api/vendors";
+const API_URL = "http://localhost:5000/api/bookings";
 
 const Vendors = () => {
-  const [vendors, setVendors] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const token = JSON.parse(localStorage.getItem("user"))?.token;
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = user?.token;
+  console.log("Current user:", user);
 
-  const fetchVendors = async () => {
+  const fetchBookings = async () => {
     try {
       setLoading(true);
       const res = await fetch(API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setVendors(data);
-    } catch (err) {
-      toast.error("Failed to fetch vendors");
+      if (res.ok) setBookings(data);
+      else toast.error(data.message || "Failed to fetch bookings");
+    } catch {
+      toast.error("Server error while fetching bookings");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchVendors();
+    fetchBookings();
   }, []);
 
-  const handleAddVendor = async (formData) => {
+  const handleAssignBooking = async (bookingId) => {
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (!res.ok) return toast.error(data.message || "Failed to add vendor");
-
-      toast.success("Vendor added");
-      fetchVendors();
-    } catch (err) {
-      toast.error(err.message);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this vendor?")) return;
-    try {
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
+      const res = await fetch(`${API_URL}/${bookingId}/assign`, {
+        method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return toast.error("Failed to delete vendor");
-
-      toast.success("Vendor deleted");
-      fetchVendors();
-    } catch (err) {
-      toast.error(err.message);
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Booking assigned to you!");
+        setBookings((prev) =>
+          prev.map((b) =>
+            b._id === bookingId ? { ...b, status: "assigned", vendorId: user } : b
+          )
+        );
+      } else toast.error(data.message || "Failed to assign booking");
+    } catch {
+      toast.error("Server error while assigning booking");
     }
   };
 
-  const handleToggleAvailability = async (vendor) => {
+  const handleStatusChange = async (bookingId, newStatus) => {
     try {
-      const res = await fetch(`${API_URL}/${vendor._id}`, {
-        method: "PUT",
+      const res = await fetch(`${API_URL}/${bookingId}/status`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...vendor, available: !vendor.available }),
+        body: JSON.stringify({ status: newStatus }),
       });
       const data = await res.json();
-      if (!res.ok) return toast.error(data.message || "Failed to update");
-
-      toast.success("Vendor status updated");
-      fetchVendors();
-    } catch (err) {
-      toast.error(err.message);
+      if (res.ok) {
+        toast.success("Booking status updated!");
+        setBookings((prev) =>
+          prev.map((b) => (b._id === bookingId ? { ...b, status: newStatus } : b))
+        );
+      } else toast.error(data.message || "Failed to update status");
+    } catch {
+      toast.error("Server error while updating status");
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h2 className="text-2xl font-bold">Manage Vendors</h2>
-
-      {/* VendorForm */}
-      <VendorForm onSubmit={handleAddVendor} />
+    <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <h2 className="text-xl font-bold font-['Poppins']">Available Bookings</h2>
 
       {loading ? (
-        <p>Loading vendors...</p>
+        <p>Loading bookings...</p>
+      ) : bookings.length === 0 ? (
+        <p>No bookings found.</p>
       ) : (
-        <div className="space-y-3">
-          {vendors.map((vendor) => (
-            <VendorCard
-              key={vendor._id}
-              vendor={vendor}
-              onDelete={handleDelete}
-              onToggle={handleToggleAvailability}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {bookings.map((booking) => {
+            const isAssignedToVendor = booking.vendorId?._id === user._id;
+
+            return (
+              <div key={booking._id} className="border p-3 rounded-lg">
+                <BookingCard booking={booking} onStatusChange={handleStatusChange} userRole="vendor" />
+
+                {/* Assign button */}
+                {booking.status === "pending" && !isAssignedToVendor && user.role === "vendor" && (
+                  <button
+                    onClick={() => handleAssignBooking(booking._id)}
+                    className="mt-2 bg-blue-500 text-white px-3 py-1 rounded"
+                  >
+                    Assign to Me
+                  </button>
+                )}
+
+                {/* Update status buttons */}
+                {isAssignedToVendor && (
+                  <div className="mt-2 space-x-2">
+                    <button
+                      onClick={() => handleStatusChange(booking._id, "completed")}
+                      className="bg-green-500 text-white px-3 py-1 rounded"
+                    >
+                      Complete
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(booking._id, "rejected")}
+                      className="bg-red-500 text-white px-3 py-1 rounded"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+
+                {/* Assigned badge */}
+                {isAssignedToVendor && <p className="mt-2 text-green-600 font-semibold">Assigned to you</p>}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -112,3 +131,4 @@ const Vendors = () => {
 };
 
 export default Vendors;
+

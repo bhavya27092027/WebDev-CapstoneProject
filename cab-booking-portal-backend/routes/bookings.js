@@ -1,129 +1,72 @@
 import express from "express";
 import Booking from "../models/Booking.js";
-import { assignVendor, getVendorBookings } from "../controllers/bookingController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ Create booking
-router.post("/", protect, async (req, res) => {
-  try {
-    const user = req.user;
-
-    const bookingData = {
-      passengerName: req.body.passengerName,
-      phone: req.body.phone,
-      pickupLocation: req.body.pickupLocation,
-      dropLocation: req.body.dropLocation,
-      carCategory: req.body.carCategory,
-      date: req.body.date,
-      time: req.body.time,
-      referenceName: req.body.referenceName || "",
-      specialInstructions: req.body.specialInstructions || "",
-      status: "pending",
-    };
-
-    if (user.role === "company") bookingData.companyId = user._id;
-    else if (user.role === "vendor") bookingData.vendorId = user._id;
-
-    const booking = await Booking.create(bookingData);
-    res.status(201).json(booking);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-
-// ✅ Get bookings
+// Get all bookings
 router.get("/", protect, async (req, res) => {
   try {
-    const user = req.user;
     let bookings;
-
-    if (user.role === "company") {
-      bookings = await Booking.find({ companyId: user._id })
-        .populate("vendorId", "name email")
-        .populate("companyId", "name email");
-    } else if (user.role === "vendor") {
-      // Show both assigned-to-this-vendor and unassigned bookings
+    if (req.user.role === "vendor") {
+      // Vendor sees only bookings assigned to them or pending
       bookings = await Booking.find({
-        $or: [
-          { vendorId: user._id },  // assigned to this vendor
-          { vendorId: null }       // still pending (unassigned)
-        ]
-      })
-        .populate("companyId", "name email")
-        .populate("vendorId", "name email");
+        $or: [{ vendorId: req.user._id }, { status: "pending" }]
+      }).populate("vendorId", "name email");
     } else {
-      bookings = await Booking.find()
-        .populate("companyId", "name email")
-        .populate("vendorId", "name email");
+      // Company/admin sees all bookings
+      bookings = await Booking.find().populate("vendorId", "name email");
     }
-
     res.json(bookings);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-
-
-// ✅ Admin/company assigns vendor to booking
-router.put("/assign-vendor/:id", protect, assignVendor);
-
-// ✅ Vendor fetches assigned bookings
-router.get("/vendor-bookings", protect, getVendorBookings);
-
-// ✅ Update booking status
-router.patch("/:id/status", protect, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const updated = await Booking.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    ).populate("vendorId", "email");
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ✅ Vendor self-assigns booking
+// Vendor self-assign booking
 router.put("/:id/assign", protect, async (req, res) => {
   try {
-    const { id } = req.params;
-    const user = req.user;
-
-    if (user.role !== "vendor") {
+    if (req.user.role !== "vendor")
       return res.status(403).json({ message: "Only vendors can assign bookings" });
-    }
 
-    const booking = await Booking.findByIdAndUpdate(
-      id,
-      { status: "assigned", vendorId: user._id },
-      { new: true }
-    ).populate("vendorId", "email");
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (booking.status !== "pending")
+      return res.status(400).json({ message: "Booking already assigned" });
+
+    booking.vendorId = req.user._id;
+    booking.status = "assigned";
+    await booking.save();
+
+    res.json({ message: "Booking assigned successfully", booking });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Vendor update booking status: complete / reject
+router.patch("/:id/status", protect, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findById(req.params.id);
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    res.json(booking);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    // Only assigned vendor can update
+    if (req.user.role === "vendor" && booking.vendorId?.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "You are not assigned to this booking" });
 
-// ✅ Delete booking
-router.delete("/:id", protect, async (req, res) => {
-  try {
-    await Booking.findByIdAndDelete(req.params.id);
-    res.json({ message: "Booking deleted" });
+    booking.status = status;
+    await booking.save();
+
+    res.json({ message: "Booking status updated", booking });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 export default router;
+

@@ -3,15 +3,15 @@ import React from "react";
 const BookingCard = ({ booking, onStatusChange, onDelete, userRole }) => {
   const {
     _id,
-    guestName,
-    guestPhone,
+    passengerName,
+    phone,
     pickupLocation,
-    dropoffLocation,
+    dropLocation,
     date,
     time,
     carCategory,
     status,
-    assignedVendor,
+    vendorId, // should be populated { _id, name, email }
   } = booking;
 
   const handleStatus = (e) => {
@@ -20,11 +20,13 @@ const BookingCard = ({ booking, onStatusChange, onDelete, userRole }) => {
 
   return (
     <div className="border rounded p-4 shadow hover:shadow-md transition">
-      <h3 className="font-bold text-lg">{guestName}</h3>
-      <p>Phone: {guestPhone}</p>
+      <h3 className="font-bold text-lg">{passengerName}</h3>
+      <p>Phone: {phone}</p>
       <p>Pickup: {pickupLocation}</p>
-      <p>Dropoff: {dropoffLocation}</p>
-      <p>Date: {date} | Time: {time}</p>
+      <p>Dropoff: {dropLocation}</p>
+      <p>
+        Date: {date} | Time: {time}
+      </p>
       <p>Car Category: {carCategory}</p>
       <p>
         Status:{" "}
@@ -41,8 +43,8 @@ const BookingCard = ({ booking, onStatusChange, onDelete, userRole }) => {
         </span>
       </p>
 
-      {/* Status update only for vendor */}
-      {userRole === "vendor" && (
+      {/* Status dropdown for vendor */}
+      {userRole === "vendor" && vendorId?._id && (
         <select
           value={status}
           onChange={handleStatus}
@@ -65,9 +67,9 @@ const BookingCard = ({ booking, onStatusChange, onDelete, userRole }) => {
       )}
 
       {/* Show assigned vendor */}
-      {assignedVendor && (
+      {vendorId && (
         <p className="mt-2 text-green-600">
-          Assigned to {assignedVendor.name || assignedVendor.email}
+          Assigned to {vendorId.name} ({vendorId.email})
         </p>
       )}
     </div>
