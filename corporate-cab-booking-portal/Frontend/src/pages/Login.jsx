@@ -1,64 +1,98 @@
-import { useState } from "react";
-import { request } from "../api";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
-export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+const Login = () => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    role: "company",
+  });
 
-  const submit = async (e) => {
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setLoading(true);
-      const data = await request("/api/auth/login", "POST", { email, password });
+      const res = await fetch("http://localhost:5000/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-      // Save user & token
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      const data = await res.json();
 
-      toast.success("Login successful!");
-      window.location.href = "/home"; // ✅ go to /home instead of /dashboard
+      if (!res.ok) {
+        toast.error(data.message || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data));
+      toast.success(`Logged in as ${data.role}`);
+
+      // ✅ redirect based on role
+      if (data.role === "company") {
+        navigate("/bookings"); // <-- send company to BookingForm page
+      } else if (data.role === "vendor") {
+        navigate("/vendors");
+      }
     } catch (err) {
-      console.error(err);
-      toast.error(err.message || "Login failed");
-    } finally {
-      setLoading(false);
+      toast.error(err.message);
     }
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="max-w-md mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4"
-    >
-      <h2 className="text-xl font-bold">Login</h2>
-
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        required
-        className="w-full p-2 border rounded"
-      />
-
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        required
-        className="w-full p-2 border rounded"
-      />
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-lg p-6 w-96 space-y-4"
       >
-        {loading ? "Logging in..." : "Login"}
-      </button>
-    </form>
+        <h2 className="text-2xl font-bold text-center">Login</h2>
+
+        <select
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        >
+          <option value="company">Company</option>
+          <option value="vendor">Vendor</option>
+        </select>
+
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Email"
+          required
+          className="w-full p-2 border rounded"
+        />
+
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Password"
+          required
+          className="w-full p-2 border rounded"
+        />
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+        >
+          Login
+        </button>
+      </form>
+    </div>
   );
-}
+};
+
+export default Login;

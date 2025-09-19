@@ -25,34 +25,32 @@ const LoginForm = ({ onLoginSuccess }) => {
   };
 
   const onSubmit = async (data) => {
-  try {
-    const res = await fetch('http://localhost:5173/api/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-    const result = await res.json();
+      const result = await res.json();
 
-    if (res.ok) {
-      // Store JWT token & user info in localStorage
-      localStorage.setItem('user', JSON.stringify({
-        token: result.token,
-        email: result.user.email,
-        role: result.user.role,
-        name: result.user.name
-      }));
+      if (res.ok) {
+        localStorage.setItem('user', JSON.stringify({
+          token: result.token,
+          email: result.user.email,
+          role: result.user.role,
+          name: result.user.name
+        }));
 
-      // Navigate to home without reload
-      onLoginSuccess(result.user); 
-    } else {
-      alert(result.message || 'Login failed');
+        onLoginSuccess(result.user); // redirect to home
+      } else {
+        alert(result.message || 'Login failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error while logging in');
     }
-  } catch (err) {
-    console.error(err);
-    alert('Server error while logging in');
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-emerald-50">
@@ -73,21 +71,30 @@ const LoginForm = ({ onLoginSuccess }) => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
           {/* Role selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 font-['Lato'] mb-2">Select Your Role</label>
+            <label className="block text-sm font-medium text-gray-700 font-['Lato'] mb-2">
+              Select Your Role
+            </label>
             <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => handleRoleSelect('company')}
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('company')}
                 className={`p-4 rounded-lg border flex flex-col items-center ${selectedRole === 'company'
                   ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+              >
                 <Building className="h-6 w-6" />
                 <span className="text-sm font-['Lato']">Company</span>
               </button>
-              <button type="button" onClick={() => handleRoleSelect('vendor')}
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('vendor')}
                 className={`p-4 rounded-lg border flex flex-col items-center ${selectedRole === 'vendor'
                   ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+              >
                 <Truck className="h-6 w-6" />
                 <span className="text-sm font-['Lato']">Vendor</span>
               </button>

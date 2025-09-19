@@ -1,13 +1,15 @@
 import express from "express";
-import { getUsers, loginUser } from "../controllers/userController.js";
-import { protect, restrictTo } from "../middleware/authMiddleware.js";
+import { registerUser, loginUser, getVendors } from "../controllers/userController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-
+// Routes
+router.post("/register", registerUser);
 router.post("/login", loginUser);
-
-router.get("/", protect, restrictTo("admin"), getUsers);
+router.get("/vendors", protect, getVendors);
 
 export default router;
+
+
 

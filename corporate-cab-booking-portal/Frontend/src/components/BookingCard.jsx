@@ -1,45 +1,76 @@
-import React from 'react';
-import { Calendar, Clock, MapPin, User, Car } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React from "react";
 
-const BookingCard = ({ booking, onStatusChange, userRole }) => {
-  const getStatusColor = status => {
-    switch(status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'ongoing': return 'bg-emerald-100 text-emerald-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+const BookingCard = ({ booking, onStatusChange, onDelete, userRole }) => {
+  const {
+    _id,
+    guestName,
+    guestPhone,
+    pickupLocation,
+    dropoffLocation,
+    date,
+    time,
+    carCategory,
+    status,
+    assignedVendor,
+  } = booking;
+
+  const handleStatus = (e) => {
+    onStatusChange(_id, e.target.value);
   };
 
-  const getCategoryLabel = category => ({
-    sedan: 'Sedan (4 seats)',
-    suv: 'SUV (6-7 seats)',
-    luxury: 'Luxury (Premium)',
-    mini: 'Mini (Compact)'
-  }[category] || category);
-
   return (
-    <motion.div className="bg-white rounded-lg shadow p-4">
-      <h3 className="font-bold">Booking #{booking.id}</h3>
-      <span className={`inline px-2 py-0.5 rounded text-xs ${getStatusColor(booking.status)}`}>
-        {booking.status}
-      </span>
-      <p><User className="inline" /> {booking.guestName}</p>
-      <p><Car className="inline" /> {getCategoryLabel(booking.carCategory)}</p>
-      <p><Calendar className="inline" /> {booking.date} <Clock className="inline" /> {booking.time}</p>
-      <p><MapPin className="inline" /> From: {booking.pickupLocation} To: {booking.dropoffLocation}</p>
+    <div className="border rounded p-4 shadow hover:shadow-md transition">
+      <h3 className="font-bold text-lg">{guestName}</h3>
+      <p>Phone: {guestPhone}</p>
+      <p>Pickup: {pickupLocation}</p>
+      <p>Dropoff: {dropoffLocation}</p>
+      <p>Date: {date} | Time: {time}</p>
+      <p>Car Category: {carCategory}</p>
+      <p>
+        Status:{" "}
+        <span
+          className={`font-semibold ${
+            status === "pending"
+              ? "text-yellow-500"
+              : status === "completed"
+              ? "text-green-500"
+              : "text-red-500"
+          }`}
+        >
+          {status}
+        </span>
+      </p>
 
-      {/* Vendor actions */}
-      {userRole === 'vendor' && booking.status === 'confirmed' && (
-        <button onClick={() => onStatusChange(booking.id, 'ongoing')} className="bg-green-500 text-white px-2 py-1 rounded mt-2">Start Trip</button>
+      {/* Status update only for vendor */}
+      {userRole === "vendor" && (
+        <select
+          value={status}
+          onChange={handleStatus}
+          className="mt-2 p-1 border rounded w-full"
+        >
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
       )}
-      {userRole === 'vendor' && booking.status === 'ongoing' && (
-        <button onClick={() => onStatusChange(booking.id, 'completed')} className="bg-gray-600 text-white px-2 py-1 rounded mt-2">End Trip</button>
+
+      {/* Delete button only for company */}
+      {userRole === "company" && (
+        <button
+          onClick={() => onDelete(_id)}
+          className="mt-2 w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+        >
+          Delete Booking
+        </button>
       )}
-    </motion.div>
+
+      {/* Show assigned vendor */}
+      {assignedVendor && (
+        <p className="mt-2 text-green-600">
+          Assigned to {assignedVendor.name || assignedVendor.email}
+        </p>
+      )}
+    </div>
   );
 };
 

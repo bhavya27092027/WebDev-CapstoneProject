@@ -1,10 +1,21 @@
 import express from "express";
-import { createVendor, getVendors, updateVendor } from "../controllers/vendorController.js";
-import { protect, restrictTo } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import {
+  getVendors,
+  createVendor,
+  updateVendor,
+  deleteVendor,
+} from "../controllers/vendorController.js";
+
 const router = express.Router();
 
-router.post("/", protect, restrictTo("admin"), createVendor); 
-router.get("/", protect, getVendors); 
-router.put("/:id", protect, restrictTo("admin"), updateVendor);
+router.route("/")
+  .get(protect, getVendors)
+  .post(protect, createVendor);
+
+router.route("/:id")
+  .put(protect, updateVendor)
+  .delete(protect, deleteVendor);
 
 export default router;
+
