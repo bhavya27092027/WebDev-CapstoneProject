@@ -42,14 +42,18 @@ router.get("/", protect, async (req, res) => {
 
     if (user.role === "company") {
       bookings = await Booking.find({ companyId: user._id })
-        .populate("vendorId", "name email");
+        .populate("vendorId", "name email")
+        .populate("companyId", "name email");
     } else if (user.role === "vendor") {
+      // Show both assigned-to-this-vendor and unassigned bookings
       bookings = await Booking.find({
         $or: [
-          { status: "pending" },       // available for assignment
-          { vendorId: user._id }       // already assigned to this vendor
+          { vendorId: user._id },  // assigned to this vendor
+          { vendorId: null }       // still pending (unassigned)
         ]
-      }).populate("companyId", "name email");
+      })
+        .populate("companyId", "name email")
+        .populate("vendorId", "name email");
     } else {
       bookings = await Booking.find()
         .populate("companyId", "name email")
@@ -61,6 +65,7 @@ router.get("/", protect, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 // ✅ Admin/company assigns vendor to booking

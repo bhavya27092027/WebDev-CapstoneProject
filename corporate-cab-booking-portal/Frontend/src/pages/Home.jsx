@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 const Home = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [vendors, setVendors] = useState([]); // For company role
+  const [vendors, setVendors] = useState([]);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token;
@@ -22,14 +22,11 @@ const Home = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
+
+      console.log("Bookings from API:", data); // 🔎 Debugging
+
       if (res.ok) {
-        const transformed = data.map((b) => ({
-          ...b,
-          guestName: b.passengerName,
-          guestPhone: b.phone,
-          dropoffLocation: b.dropLocation,
-        }));
-        setBookings(transformed);
+        setBookings(data); // ✅ Use backend field names directly
       } else {
         toast.error(data.message || "Failed to fetch bookings");
       }
@@ -40,7 +37,7 @@ const Home = () => {
     }
   };
 
-  // Fetch vendors (company only)
+  // Fetch vendors (only company)
   const fetchVendors = async () => {
     if (userRole !== "company") return;
     try {
@@ -59,7 +56,7 @@ const Home = () => {
     fetchVendors();
   }, []);
 
-  // Company: assign vendor
+  // Assign vendor (company)
   const assignVendor = async (bookingId, vendorId) => {
     try {
       const res = await fetch(`${API_URL}/assign-vendor/${bookingId}`, {
@@ -78,13 +75,15 @@ const Home = () => {
             b._id === bookingId ? { ...b, vendorId: data.vendorId } : b
           )
         );
-      } else toast.error(data.message || "Failed to assign vendor");
+      } else {
+        toast.error(data.message || "Failed to assign vendor");
+      }
     } catch {
       toast.error("Server error while assigning vendor");
     }
   };
 
-  // Vendor: self-assign
+  // Vendor self-assign
   const handleAssignBooking = async (bookingId) => {
     try {
       const res = await fetch(`${API_URL}/${bookingId}/assign`, {
@@ -99,36 +98,11 @@ const Home = () => {
             b._id === bookingId ? { ...b, status: "assigned", vendorId: user } : b
           )
         );
-      } else toast.error(data.message || "Failed to assign booking");
+      } else {
+        toast.error(data.message || "Failed to assign booking");
+      }
     } catch {
       toast.error("Server error while assigning booking");
-    }
-  };
-
-  // Create booking
-  const handleBookingSubmit = async (bookingData) => {
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(bookingData),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Booking created!");
-        const transformed = {
-          ...data,
-          guestName: data.passengerName,
-          guestPhone: data.phone,
-          dropoffLocation: data.dropLocation,
-        };
-        setBookings((prev) => [transformed, ...prev]);
-      } else toast.error(data.message || "Failed to create booking");
-    } catch {
-      toast.error("Server error while creating booking");
     }
   };
 
@@ -151,7 +125,9 @@ const Home = () => {
           )
         );
         toast.success("Booking status updated!");
-      } else toast.error(data.message || "Failed to update status");
+      } else {
+        toast.error(data.message || "Failed to update status");
+      }
     } catch {
       toast.error("Server error while updating status");
     }
@@ -179,7 +155,7 @@ const Home = () => {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       {userRole === "company" && (
-        <BookingForm onBookingCreated={handleBookingSubmit} />
+        <BookingForm onBookingCreated={fetchBookings} />
       )}
 
       <section>
@@ -245,14 +221,6 @@ const Home = () => {
                         ))}
                       </select>
                     </div>
-                  )}
-
-                  {/* Show assigned vendor */}
-                  {booking.vendorId && (
-                    <p className="mt-2 text-green-600">
-                      Assigned to {booking.vendorId.name} (
-                      {booking.vendorId.email})
-                    </p>
                   )}
                 </div>
               );
