@@ -68,5 +68,35 @@ router.patch("/:id/status", protect, async (req, res) => {
   }
 });
 
+// Create a new booking (Company)
+router.post("/", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "company")
+      return res.status(403).json({ message: "Only companies can create bookings" });
+
+    const { passengerName, phone, pickupLocation, dropLocation, carCategory, date, time, referenceName, specialInstructions } = req.body;
+
+    const booking = await Booking.create({
+      companyId: req.user._id,
+      passengerName,
+      phone,
+      pickupLocation,
+      dropLocation,
+      carCategory,
+      date,
+      time,
+      referenceName,
+      specialInstructions,
+      status: "pending",
+    });
+
+    res.status(201).json({ message: "Booking created successfully", booking });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 export default router;
 
