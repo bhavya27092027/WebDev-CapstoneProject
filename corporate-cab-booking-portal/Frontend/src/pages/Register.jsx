@@ -6,6 +6,7 @@ import { Building, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { request } from "../api";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -17,7 +18,8 @@ const registerSchema = z.object({
 });
 
 const Register = ({ onRegisterSuccess }) => {
-  const [selectedRole, setSelectedRole] = useState("");
+  const navigate = useNavigate();
+  const [selectedRole, setSelectedRole] = useState("company");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -31,32 +33,28 @@ const Register = ({ onRegisterSuccess }) => {
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    setValue("role", role);
+    setValue("role", role, { shouldValidate: true });
   };
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    try {
-      const result = await request("/api/auth/register", "POST", data);
 
-      // Save user info in localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          token: result.token,
-          email: result.user.email,
-          role: result.user.role,
-          name: result.user.name,
-        })
-      );
-      localStorage.setItem("token", result.token);
+    try {
+      const result = await request("/users/register", "POST", data);
 
       toast.success("Registration successful!");
-      onRegisterSuccess?.(result.user);
-      window.location.href = "/home"; // ✅ go to home
+
+      navigate("/login");
+
     } catch (err) {
       console.error(err);
-      toast.error(err.message || "Registration failed");
+
+      if (err.message === "User exists") {
+        toast.info("User already registered. Please login.");
+        navigate("/login");
+      } else {
+        toast.error(err.message || "Registration failed");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -84,11 +82,10 @@ const Register = ({ onRegisterSuccess }) => {
               <button
                 type="button"
                 onClick={() => handleRoleSelect("company")}
-                className={`p-4 rounded-lg border flex flex-col items-center ${
-                  selectedRole === "company"
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                    : "border-gray-200 text-gray-500 hover:border-gray-300"
-                }`}
+                className={`p-4 rounded-lg border flex flex-col items-center ${selectedRole === "company"
+                  ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  }`}
               >
                 <Building className="h-6 w-6" />
                 <span className="text-sm font-['Lato']">Company</span>
@@ -96,11 +93,10 @@ const Register = ({ onRegisterSuccess }) => {
               <button
                 type="button"
                 onClick={() => handleRoleSelect("vendor")}
-                className={`p-4 rounded-lg border flex flex-col items-center ${
-                  selectedRole === "vendor"
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                    : "border-gray-200 text-gray-500 hover:border-gray-300"
-                }`}
+                className={`p-4 rounded-lg border flex flex-col items-center ${selectedRole === "vendor"
+                  ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  }`}
               >
                 <Truck className="h-6 w-6" />
                 <span className="text-sm font-['Lato']">Vendor</span>

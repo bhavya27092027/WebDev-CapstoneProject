@@ -17,11 +17,16 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Login button clicked");
+    console.log("Sending request...");
     try {
       const res = await fetch("http://localhost:5000/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        }),
       });
 
       const data = await res.json();
@@ -32,14 +37,15 @@ const Login = () => {
       }
 
       localStorage.setItem("user", JSON.stringify(data));
+
       toast.success(`Logged in as ${data.role}`);
 
-      // ✅ redirect based on role
       if (data.role === "company") {
-        navigate("/bookings"); // <-- send company to BookingForm page
+        navigate("/bookings");
       } else if (data.role === "vendor") {
         navigate("/vendors");
       }
+
     } catch (err) {
       toast.error(err.message);
     }
