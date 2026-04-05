@@ -14,18 +14,17 @@ const Login = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login button clicked");
-    console.log("Sending request...");
+
     try {
       const res = await fetch("http://localhost:5000/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
         }),
       });
 
@@ -40,12 +39,13 @@ const Login = () => {
 
       toast.success(`Logged in as ${data.role}`);
 
-      if (data.role === "company") {
+      if (!data.role) {
+        navigate("/select-role");
+      } else if (data.role === "company") {
         navigate("/bookings");
-      } else if (data.role === "vendor") {
+      } else {
         navigate("/vendors");
       }
-
     } catch (err) {
       toast.error(err.message);
     }
@@ -64,7 +64,6 @@ const Login = () => {
           value={formData.role}
           onChange={handleChange}
           className="w-full p-2 border rounded"
-          required
         >
           <option value="company">Company</option>
           <option value="vendor">Vendor</option>
@@ -96,6 +95,7 @@ const Login = () => {
         >
           Login
         </button>
+
       </form>
     </div>
   );
